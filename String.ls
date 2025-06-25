@@ -1,147 +1,97 @@
 
   do ->
 
+    { create-regexp } = dependency 'unsafe.RegExp'
+
     string-size = (.length)
 
-    repeat-string = (string, n) -> string * n
+    maybe-null = -> if it is -1 then null else it
+
+    first-index-of = (haystack, needle, from-index = 0)               -> haystack.index-of      needle, from-index |> maybe-null
+    last-index-of  = (haystack, needle, from-index = haystack.length) -> haystack.last-index-of needle, from-index |> maybe-null
+
+    string-contains = (haystack, needle) -> (haystack `first-index-of` needle)?
+
+    string-segment = (string, [ first-index = 0, size = string.length - first-index ]) -> string.slice first-index, first-index + size
+
+    string-interval = (string, [ first-index = 0, last-index = string.length ]) -> string.slice first-index, last-index
+
+    string-split-at-index = (string, index) ->
+
+      * string `string-interval` [ 0, index ]
+        string `string-segment`  [ index ]
+
+    string-segment-prefix-and-suffix = (string, [ start-index, end-index ]) ->
+
+      return [ string, '' ] unless start-index?
+
+      prefix = string `string-interval` [ 0, start-index ]
+      suffix = string `string-segment`  [ end-index ]
+
+      [ prefix, suffix ]
+
+    string-split-by-segment = (haystack, needle, use-last = no) ->
+
+      index-of = if use-last then last-index-of else first-index-of
+
+      start-index = haystack `index-of` needle
+
+      end-index = start-index + (string-size needle)
+
+      haystack `string-segment-prefix-and-suffix` [ start-index, end-index ]
+
+    string-split-by-first-segment = (haystack, needle) -> split-by-segment haystack, needle, no
+    string-split-by-last-segment  = (haystack, needle) -> split-by-segment haystack, needle, yes
+
+    string-between = (string, [ prefix, suffix ], use-last-for-suffix = no) ->
+
+      index-of = if use-last-for-suffix then last-index-of else first-index-of
+
+      prefix-index = string `first-index-of` prefix => return '' unless ..?
+      suffix-index = string `index-of`       suffix => return '' unless ..?
+
+      first-index = prefix-index + (string-size prefix)
+      from-index = if use-last-for-suffix then void else first-index
+      last-index = index-of string, suffix, from-index
+
+      if use-last-for-suffix
+        if last-index < first-index
+
+          return ''
+
+      return '' if first-index >= last-index
+
+      string `string-interval` [ first-index, last-index ]
 
     #
 
-    circumfix = (stem, [ prefix = '', suffix = prefix ]) -> "#prefix#stem#suffix"
+    string-replace-segment = (haystack, [ pattern, replacement, use-regexp = no, regexp-flags ]) ->
 
-    single-quotes = -> it `circumfix` <[ ' ]>
-    double-quotes = -> it `circumfix` <[ " ]>
+      needle = if use-regexp
+        create-regexp pattern, regexp-flags
+      else
+        pattern
 
-    parens = -> it `circumfix` <[ ( ) ]>
-    braces = -> it `circumfix` <[ { } ]>
+      haystack.replace needle, replacement
 
-    square-brackets = -> it `circumfix` <[ [ ] ]>
-    angle-brackets  = -> it `circumfix` <[ < > ]>
+    string-remove-segment = (string, [ pattern, use-regexp, regexp-flags ]) -> string `string-replace-segment` [ pattern, '', use-regexp, regexp-flags ]
 
-    #
+    string-as-words = (string) ->
 
-    take-first-chars = (string, n) -> string.slice 0, n
-    drop-first-chars = (string, n) -> string.slice n
-
-    take-last-chars = (string, n) -> string.slice -n
-    drop-last-chars = (string, n) -> string.slice 0, (string-size string) - n
-
-    take-chars-interval = (string, start, end) -> string.slice start, end
-    drop-chars-interval = (string, start, end) -> "#{ take-first-chars string, start }#{ drop-first-chars string, end }"
-
-    take-chars-segment = (string, start, n) -> string.slice start, start + n
-    drop-chars-segment = (string, start, n) -> "#{ take-first-chars string, start }#{ drop-first-chars string, start + length }"
-
-    #
-
-    padl = (value, count, padding = '0') -> "#{ repeat-string padding, count }#value" |> take-last-chars  _ , count
-    padr = (value, count, padding = ' ') -> "#value#{ repeat-string padding, count }" |> take-first-chars _ , count
-
-    #
-
-    empty-if-void = -> if it is void then '' else it
-
-    string-from-template = (template, values) -> [ ("#literal#{ empty-if-void values[index] }") for literal, index in template / '#' ] * ''
-
-    string-segment-index = (string, segment) -> index = string.index-of segment ; if index is -1 then null else index
-
-    #
-
-    lower-case = (.to-lower-case!)
-    upper-case = (.to-upper-case!)
-
-    #
-
-    trim-regex = /^[\s]+|[\s]+$/g
-
-      # ^[\s]+ : ^ asserts the position at the start of the line
-      #        : \s matches any whitespace character one or more times (+)
-
-      # | : acts as an alternatives separator
-      #   : allows the regex to match either the pattern before or the pattern after it
-
-      # [\s]+$ : the $ symbol asserts the position at the end of the line
-
-      # the regex matches both leading and trailing whitespace characters
-
-    trim = (.replace trim-regex, '')
-
-    #
-
-    camel-regex = /[-_]+(.)?/g
-
-      # [-_]+ : matches one or more occurrences of either a hyphen - or an underscore _
-      #       : the square brackets [] create a character set, and the + means one or more
-
-      # (.)? : the parentheses () create a capturing group
-      #      : inside the group there is a dot . which matches any single character except a newline.
-      #      : the ? after the group makes it optional, meaning it can appear zero or one time
-
-    camel-case = (.replace camel-regex, -> upper-case &1 ? '')
-
-    #
-
-    dash-lower-upper = (, lower, upper) -> "#{ lower }-#{ if upper.length > 1 then upper else lower-case upper }"
-
-    dash-upper = (, upper) -> if upper.length > 1 then "#upper-" else lower-case upper
-
-    upper-lower-regex = /([^-A-Z])([A-Z]+)/g
-
-    replace-upper-lower = (.replace upper-lower-regex, dash-lower-upper)
-
-    upper-regex = /^([A-Z]+)/
-
-    replace-upper = (.replace upper-regex, dash-upper)
-
-    kebab-case = -> it |> replace-upper-lower |> replace-upper
-
-    #
-
-    capital-regex = /\b\w/g
-
-      # \b : matches a position where a word boundary occurs
-      #    : it does not match an actual character, it identifies a position between characters
-      #    : matches the transition from a word character (such as letters, digits, underscores) to a non-word character
-      #    : matches the transition from a non-word character to a word-character
-
-      # \w : represents a word character
-      #    : matches letters (both uppercase and lowercase), digits, underscores
-
-      # together they match all word boundaries followed by word characters
-
-    capital-case = (.replace capital-regex, upper-case)
-
-    #
-
-    words-regex = /[ ]+/
-
-    string-as-words = ->
-
-      switch it.length
+      switch string-size string
 
         | 0 => []
 
-        else it.split words-regex
-
-    words-as-string = (.join ' ')
+        else string.split create-regexp '[ ]+', ''
 
     {
-      repeat-string,
-      circumfix,
-      single-quotes, double-quotes,
-      parens, braces,
-      square-brackets, angle-brackets,
-      take-first-chars, drop-first-chars,
-      take-last-chars,  drop-last-chars,
-      take-chars-interval, drop-chars-interval,
-      take-chars-segment, drop-chars-segment,
-      padl, padr,
-      string-from-template,
-      string-segment-index,
-      trim,
-      upper-case, lower-case,
-      camel-case, kebab-case,
-      capital-case,
-      string-as-words,
-      words-as-string
+      string-size,
+      first-index-of, last-index-of,
+      string-contains,
+      string-segment, string-interval, string-between,
+      string-split-at-index,
+      string-segment-prefix-and-suffix, string-split-by-segment,
+      string-split-by-first-segment, string-split-by-last-segment,
+      string-replace-segment, string-remove-segment,
+      string-as-words
     }

@@ -1,37 +1,39 @@
 
   do ->
 
-    item-index = (array, item) ->
+    is-array = -> (typeof! it) is 'Array'
 
-      for value, index in array when item is value
-        return index
-      void
+    array-size = (.length)
 
-    array-size = (array) -> array.length
+    map-array-items = (array, fn) -> [ (fn item, index, array) for item, index in array ]
 
-    take-first-items = (array, n) -> array.slice 0, n
-    drop-first-items = (array, n) -> array.slice n
+    first-middle-and-last-array-items = (array) ->
 
-    take-last-items = (array, n) -> array.slice -n
-    drop-last-items = (array, n) -> array.slice 0, -n
+      return null if (array-size array) < 2
 
-    take-array-interval = (array, start, end) -> array.slice start, end
-    drop-array-interval = (array, start, end) -> (take-first-items array, start) ++ (drop-first-items array, end)
+      [ first, ...middle, last ] = array
+      { first, middle, last }
 
-    take-array-segment = (array, start, length) -> array.slice start, start+length
-    drop-array-segment = (array, start, length) -> drop-array-interval array, start, start+length
+    keep-array-items = (array, fn) -> [ (item) for item, index in array when fn item, index, array ]
 
-    inject-array-segment = (array, segment, position) -> (take-first-items array, position) ++ segment ++ (drop-first-items array, position)
+    drop-array-items = (array, fn) -> keep-array-items array, -> not fn ...
 
-    repeat-item = (item, n) -> [ (item) for index til n ]
+    each-array-item = (array, proc) ->
+
+      for item, index in array => proc item, index, array
+      array
+
+    find-array-item = (array, predicate) ->
+
+      for item, index in array when predicate item, index, array => return item
+      null
 
     {
+      is-array,
       array-size,
-      item-index,
-      take-first-items, drop-first-items,
-      take-last-items,  drop-last-items,
-      take-array-interval, drop-array-interval,
-      take-array-segment, drop-array-segment,
-      inject-array-segment,
-      repeat-item
+      map-array-items,
+      first-middle-and-last-array-items,
+      keep-array-items, drop-array-items,
+      each-array-item,
+      find-array-item
     }
