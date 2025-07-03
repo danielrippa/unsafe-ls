@@ -23,9 +23,14 @@
       for item, index in array => proc item, index, array
       array
 
-    find-array-item = (array, predicate) ->
+    find-array-item = (array, predicate, initial-item-index = 0) ->
 
-      for item, index in array when predicate item, index, array => return item
+      for item, index in array when index >= initial-item-index and predicate item, index, array => return item
+      null
+
+    array-item-index = (array, item, initial-item-index = 0) ->
+
+      for value, index in array when index >= initial-item-index and value is item => return index
       null
 
     {
@@ -35,5 +40,6 @@
       first-middle-and-last-array-items,
       keep-array-items, drop-array-items,
       each-array-item,
-      find-array-item
+      find-array-item,
+      array-item-index
     }

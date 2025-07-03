@@ -40,8 +40,8 @@
 
       haystack `string-segment-prefix-and-suffix` [ start-index, end-index ]
 
-    string-split-by-first-segment = (haystack, needle) -> split-by-segment haystack, needle, no
-    string-split-by-last-segment  = (haystack, needle) -> split-by-segment haystack, needle, yes
+    string-split-by-first-segment = (haystack, needle) -> string-split-by-segment haystack, needle, no
+    string-split-by-last-segment  = (haystack, needle) -> string-split-by-segment haystack, needle, yes
 
     string-between = (string, [ prefix, suffix ], use-last-for-suffix = no) ->
 
@@ -84,6 +84,17 @@
 
         else string.split create-regexp '[ ]+', ''
 
+    string-starts-with-segment = (haystack, prefix) -> (haystack `first-index-of` prefix) is 0
+
+    string-ends-with-segment = (haystack, suffix) ->
+
+      return no if (string-size suffix) > (string-size haystack)
+
+      expected-index = (string-size haystack) - (string-size suffix)
+      actual-index =   haystack `last-index-of` suffix
+
+      actual-index is expected-index
+
     {
       string-size,
       first-index-of, last-index-of,
@@ -93,5 +104,6 @@
       string-segment-prefix-and-suffix, string-split-by-segment,
       string-split-by-first-segment, string-split-by-last-segment,
       string-replace-segment, string-remove-segment,
-      string-as-words
+      string-as-words,
+      string-starts-with-segment, string-ends-with-segment
     }

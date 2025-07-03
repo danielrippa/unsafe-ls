@@ -13,6 +13,8 @@
 
         |> (/ "#record-separator")
 
+    lines-as-string = (lines, separator = lf) -> lines * "#separator"
+
     {
-      string-as-lines
+      string-as-lines, lines-as-string
     }

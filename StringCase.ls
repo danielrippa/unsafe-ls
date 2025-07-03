@@ -50,8 +50,6 @@
 
     capital-case = -> it |> (.replace initial-capitals, upper-case)
 
-    #
-
     {
       lower-case, upper-case,
       camel-case, kebab-case,

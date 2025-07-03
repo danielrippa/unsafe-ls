@@ -2,7 +2,7 @@
   do ->
 
     { backslash } = dependency 'unsafe.Constants'
-    { string-remove-segment: remove-segment } = dependency 'unsafe.String'
+    { string-remove-segment: remove-segment, string-replace-segment: replace-segment } = dependency 'unsafe.String'
 
     whitespace = "#{backslash}s+"
 
@@ -14,6 +14,9 @@
 
     trimmed-string = (string) -> string `remove-segment` [ "#leading-whitespace|#trailing-whitespace", yes ]
 
+    whitespace-as-separator = (string, separator = '_') -> string `replace-segment` [ whitespace, yes ]
+
     {
-      trimmed-string
+      trimmed-string,
+      whitespace-as-separator
     }
